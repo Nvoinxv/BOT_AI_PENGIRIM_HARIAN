@@ -90,3 +90,34 @@ Jangan terlalu panjang.
     except Exception as e:
         logger.error(f"Error dari Gemini API (Macro Summary): {e}")
         return "Maaf Kevin, Beatrice kesulitan mengambil data makro ekonomi saat ini. 😔"
+
+# Tambahan untuk fitur Chatbot DM
+chat_session = None
+
+def get_chat_response(user_message: str) -> str:
+    """
+    Memproses pesan masuk dari user dan membalas menggunakan Gemini Chat Session.
+    """
+    global chat_session
+    
+    if chat_session is None:
+        system_instruction = (
+            "You are Beatrice, Kevin's personal AI assistant. "
+            "You are helpful, friendly, speak in Indonesian, and assist Kevin with his daily tasks."
+        )
+        try:
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                system_instruction=system_instruction
+            )
+            chat_session = model.start_chat(history=[])
+        except Exception as e:
+            logger.error(f"Gagal inisialisasi Gemini Chat Session: {e}")
+            return "Maaf Kevin, Beatrice sedang mengalami masalah saat menyiapkan chatbot. 😔"
+        
+    try:
+        response = chat_session.send_message(user_message)
+        return response.text.strip()
+    except Exception as e:
+        logger.error(f"Error dari Gemini API (Chatbot): {e}")
+        return "Maaf Kevin, Beatrice sedang mengalami sedikit gangguan sistem saat membalas pesan. 😔"
