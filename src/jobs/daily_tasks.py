@@ -7,6 +7,7 @@ from src.services.gemini_service import generate_morning_summary, generate_macro
 from src.services.news_crypto_service import get_combined_market_news
 from src.config.settings import EMAIL_USER
 from src.services.economic_calendar_api import EconomicCalendarAPI
+from src.services.bible_service import run_daily_bible_job
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,8 @@ def job_morning_email():
 
 
 def job_bible_verse():
-    logging.info("Running job_bible_verse")
+    logger.info("Menjalankan tugas harian: Renungan Pagi Alkitab...")
+    run_daily_bible_job()
 
 def run_macro_briefing(session_name: str):
     logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub & Kalender...")
