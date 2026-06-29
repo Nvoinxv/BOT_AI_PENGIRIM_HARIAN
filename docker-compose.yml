@@ -1,8 +1,55 @@
+# =============================================================================
+# BEATRICE - PERSONAL AI ASSISTANT BOT
+# Production Docker Compose for VPS Deployment
+# Pemilik : Kevin
+# =============================================================================
+
 version: '3.8'
+
 services:
-  bot:
-    build: .
-    container_name: sender_bot
+  beatrice-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: beatrice-assistant-bot:latest
+    container_name: beatrice_assistant_bot
+    restart: always
+
+    # Memuat konfigurasi rahasia & API Key
     env_file:
       - .env
-    restart: unless-stopped
+
+    # Pengaturan variabel lingkungan tambahan
+    environment:
+      - TZ=Asia/Jakarta
+      - PYTHONUNBUFFERED=1
+
+    # Penyimpanan persisten untuk log agar tidak hilang saat restart kontainer
+    volumes:
+      - ./logs:/app/logs
+
+    # Pembatasan Penggunaan Sumber Daya VPS (cegah kelebihan beban memori/CPU)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
+
+    # Rotasi log internal Docker agar tidak memenuhi hard disk VPS
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Isolasi Jaringan Khusus
+    networks:
+      - beatrice-network
+
+networks:
+  beatrice-network:
+    name: beatrice_vps_net
+    driver: bridge
