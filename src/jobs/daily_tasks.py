@@ -6,6 +6,7 @@ from src.services.email_service import fetch_recent_emails, format_summary_to_ht
 from src.services.gemini_service import generate_morning_summary, generate_macro_summary
 from src.services.news_crypto_service import get_combined_market_news
 from src.config.settings import EMAIL_USER
+from src.services.economic_calendar_api import EconomicCalendarAPI
 
 logger = logging.getLogger(__name__)
 
@@ -45,16 +46,18 @@ def job_bible_verse():
     logging.info("Running job_bible_verse")
 
 def run_macro_briefing(session_name: str):
-    logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub...")
+    logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub & Kalender...")
     try:
         now_wib = get_current_wib_time()
         date_str = now_wib.strftime("%d %B %Y (%H:%M WIB)")
         
-        # 1. Ambil berita Finnhub
+        # 1. Ambil berita Finnhub & Kalender Ekonomi
         news_data = get_combined_market_news()
+        econ_api = EconomicCalendarAPI()
+        econ_events = econ_api.get_formatted_calendar_str()
         
         # 2. Buat analisa sentimen Bull/Bear/Sideways dengan Gemini
-        summary = generate_macro_summary(date_str, news_data)
+        summary = generate_macro_summary(date_str, news_data, econ_events)
         logger.info(f"Analisa sentimen pasar ({session_name}) berhasil dibuat.")
         
         # 3. Format ke HTML & Kirim via Resend API

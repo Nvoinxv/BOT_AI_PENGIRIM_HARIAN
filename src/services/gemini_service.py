@@ -59,17 +59,17 @@ Have a great day! ❤️
 
 def generate_macro_summary(date_wib_str: str, news_data: dict, econ_events: str = "") -> str:
     """
-    Menghasilkan ringkasan berita Finnhub (Kripto, Forex, Ekonomi) dengan analisa sentimen BULL/BEAR/SIDEWAYS.
+    Menghasilkan ringkasan berita Finnhub & Kalender Ekonomi dengan analisa sentimen BULL/BEAR/SIDEWAYS.
     """
     system_instruction = (
         "You are Beatrice, Kevin's smart personal AI assistant. "
-        "Your task is to analyze financial news from Finnhub (crypto, forex, general economy) and explain them in very simple, easy-to-understand Indonesian."
+        "Your task is to analyze financial news from Finnhub and economic calendar events, and explain them in very simple, easy-to-understand Indonesian."
     )
     
     prompt = f"""
 Tanggal: {date_wib_str}
 
-Berikut adalah data berita terbaru dari Finnhub API:
+Data Berita Terbaru dari Finnhub API:
 1. BERITA KRIPTO:
 {news_data.get('crypto', 'Tidak ada berita.')}
 
@@ -79,20 +79,26 @@ Berikut adalah data berita terbaru dari Finnhub API:
 3. BERITA EKONOMI UMUM:
 {news_data.get('general', 'Tidak ada berita.')}
 
-Data Tambahan Kalender Ekonomi:
+Data Kalender Ekonomi (Economic Calendar):
 {econ_events if econ_events else 'Tidak ada event kalender khusus hari ini.'}
 
 TUGAS ANDA:
-Ringkaslah berita-berita di atas dengan bahasa Indonesia yang SANGAT MUDAH DIPAHAMI oleh pemula sekalipun (hindari jargon rumit tanpa penjelasan).
-Tentukan sentimen pasar secara keseluruhan dan per kategori: apakah BULLISH (🟢 Bull), BEARISH (🔴 Bear), atau SIDEWAYS (🟡 Sideways).
+1. Ringkaslah berita dan event kalender di atas dengan bahasa Indonesia yang SANGAT MUDAH DIPAHAMI oleh pemula sekalipun (hindari jargon rumit tanpa penjelasan).
+2. Tentukan sentimen pasar secara keseluruhan dan per kategori: apakah BULLISH (🟢 Bull), BEARISH (🔴 Bear), atau SIDEWAYS (🟡 Sideways).
+3. KHUSUS UNTUK KALENDER EKONOMI: Berikan konfirmasi sentimen dampaknya (🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS) untuk setiap event penting serta penjelasan mudah 1 kalimat mengapa angka/estimasi tersebut berdampak demikian terhadap pasar aset berisiko/kripto.
 
 Gunakan format STRICT berikut ini:
 
-📊 BRIEFING PASAR & EKONOMI (FINNHUB)
+📊 BRIEFING PASAR & EKONOMI (FINNHUB & KALENDER)
 Tanggal: {date_wib_str}
 ━━━━━━━━━━━━━━━━━━━━━
 🔥 SENTIMENT PASAR SAAT INI: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS]
 [Alasan singkat 1-2 kalimat dengan bahasa gampang dipahami]
+━━━━━━━━━━━━━━━━━━━━━
+📆 KALENDER EKONOMI AS (Konfirmasi Sentimen)
+* [Jam WIB] - [Nama Event] | Est: [X] vs Act: [Y]
+  👉 Sentimen: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS] ([Alasan singkat dampak event ini])
+* [Jam WIB] - [Nama Event] ...
 ━━━━━━━━━━━━━━━━━━━━━
 🪙 BERITA KRIPTO (Sentimen: [Bull/Bear/Sideways])
 * [poin 1 diringkas mudah]
