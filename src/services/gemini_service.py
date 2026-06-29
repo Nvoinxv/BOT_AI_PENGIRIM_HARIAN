@@ -57,28 +57,53 @@ Have a great day! ❤️
         logger.error(f"Error dari Gemini API (Morning Summary): {e}")
         return "Maaf Kevin, Beatrice mengalami masalah saat membaca email hari ini. 😔"
 
-def generate_macro_summary(date_wib_str: str, macro_events: str, crypto_prices: str) -> str:
+def generate_macro_summary(date_wib_str: str, news_data: dict, econ_events: str = "") -> str:
     """
-    Menghasilkan ringkasan berita makro ekonomi dan kripto.
+    Menghasilkan ringkasan berita Finnhub (Kripto, Forex, Ekonomi) dengan analisa sentimen BULL/BEAR/SIDEWAYS.
     """
     system_instruction = (
-        "You are Beatrice, Kevin's personal AI assistant. "
-        "Your task is to summarize macro-economic news, events, and crypto updates in a concise, friendly tone in Indonesian."
+        "You are Beatrice, Kevin's smart personal AI assistant. "
+        "Your task is to analyze financial news from Finnhub (crypto, forex, general economy) and explain them in very simple, easy-to-understand Indonesian."
     )
     
     prompt = f"""
 Tanggal: {date_wib_str}
 
-Berikut adalah data kalender ekonomi makro (AS) hari ini:
-{macro_events}
+Berikut adalah data berita terbaru dari Finnhub API:
+1. BERITA KRIPTO:
+{news_data.get('crypto', 'Tidak ada berita.')}
 
-Berikut adalah data harga Kripto terbaru:
-{crypto_prices}
+2. BERITA FOREX:
+{news_data.get('forex', 'Tidak ada berita.')}
 
-Buatlah ringkasan singkat untuk Kevin mengenai apa saja event penting yang terjadi atau akan terjadi, 
-serta update harga Bitcoin/Kripto, dan insight singkat sektor apa yang mungkin menarik.
-Gunakan format bullet points dan gaya bahasa asisten personal (Beatrice) yang ceria. 
-Jangan terlalu panjang.
+3. BERITA EKONOMI UMUM:
+{news_data.get('general', 'Tidak ada berita.')}
+
+Data Tambahan Kalender Ekonomi:
+{econ_events if econ_events else 'Tidak ada event kalender khusus hari ini.'}
+
+TUGAS ANDA:
+Ringkaslah berita-berita di atas dengan bahasa Indonesia yang SANGAT MUDAH DIPAHAMI oleh pemula sekalipun (hindari jargon rumit tanpa penjelasan).
+Tentukan sentimen pasar secara keseluruhan dan per kategori: apakah BULLISH (🟢 Bull), BEARISH (🔴 Bear), atau SIDEWAYS (🟡 Sideways).
+
+Gunakan format STRICT berikut ini:
+
+📊 BRIEFING PASAR & EKONOMI (FINNHUB)
+Tanggal: {date_wib_str}
+━━━━━━━━━━━━━━━━━━━━━
+🔥 SENTIMENT PASAR SAAT INI: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS]
+[Alasan singkat 1-2 kalimat dengan bahasa gampang dipahami]
+━━━━━━━━━━━━━━━━━━━━━
+🪙 BERITA KRIPTO (Sentimen: [Bull/Bear/Sideways])
+* [poin 1 diringkas mudah]
+* [poin 2 diringkas mudah]
+━━━━━━━━━━━━━━━━━━━━━
+💵 BERITA FOREX & EKONOMI (Sentimen: [Bull/Bear/Sideways])
+* [poin 1 diringkas mudah]
+* [poin 2 diringkas mudah]
+━━━━━━━━━━━━━━━━━━━━━
+💡 INSIGHT BEATRICE
+[Kesimpulan & saran pantauan santai dari Beatrice untuk Kevin]
 """
     try:
         model = genai.GenerativeModel(
@@ -89,7 +114,8 @@ Jangan terlalu panjang.
         return response.text.strip()
     except Exception as e:
         logger.error(f"Error dari Gemini API (Macro Summary): {e}")
-        return "Maaf Kevin, Beatrice kesulitan mengambil data makro ekonomi saat ini. 😔"
+        return "📊 BRIEFING PASAR & EKONOMI\n━━━━━━━━━━━━━━━━━━━━━\n🔥 SENTIMENT PASAR SAAT INI: 🟡 SIDEWAYS\nPasar sedang konsolidasi menanti data baru.\n\n💡 INSIGHT BEATRICE\nMaaf Kevin, Beatrice mengalami sedikit kendala saat memproses data AI saat ini. Tetap kelola risiko dengan baik ya! ❤️"
+
 
 # Tambahan untuk fitur Chatbot DM
 chat_session = None

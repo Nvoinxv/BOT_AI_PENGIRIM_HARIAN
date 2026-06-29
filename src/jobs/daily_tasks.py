@@ -3,7 +3,8 @@ import time
 import logging
 from src.utils.time_helper import get_current_wib_time
 from src.services.email_service import fetch_recent_emails, format_summary_to_html, send_email_resend
-from src.services.gemini_service import generate_morning_summary
+from src.services.gemini_service import generate_morning_summary, generate_macro_summary
+from src.services.news_crypto_service import get_combined_market_news
 from src.config.settings import EMAIL_USER
 
 logger = logging.getLogger(__name__)
@@ -43,11 +44,41 @@ def job_morning_email():
 def job_bible_verse():
     logging.info("Running job_bible_verse")
 
+def run_macro_briefing(session_name: str):
+    logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub...")
+    try:
+        now_wib = get_current_wib_time()
+        date_str = now_wib.strftime("%d %B %Y (%H:%M WIB)")
+        
+        # 1. Ambil berita Finnhub
+        news_data = get_combined_market_news()
+        
+        # 2. Buat analisa sentimen Bull/Bear/Sideways dengan Gemini
+        summary = generate_macro_summary(date_str, news_data)
+        logger.info(f"Analisa sentimen pasar ({session_name}) berhasil dibuat.")
+        
+        # 3. Format ke HTML & Kirim via Resend API
+        html_content = format_summary_to_html(summary, title=f"Analisa Pasar {session_name} - {date_str}")
+        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER != "your_email@gmail.com" else "kevin@example.com"
+        
+        success = send_email_resend(
+            to_email=recipient,
+            subject=f"📊 Beatrice Market Sentiment ({session_name}) - {date_str}",
+            html_content=html_content,
+            text_content=summary
+        )
+        if success:
+            logger.info(f"Briefing makro {session_name} terkirim via Resend API.")
+        else:
+            logger.error(f"Gagal mengirim briefing makro {session_name} via Resend API.")
+    except Exception as e:
+        logger.error(f"Error pada run_macro_briefing ({session_name}): {e}")
+
 def job_morning_macro():
-    logging.info("Running job_morning_macro")
+    run_macro_briefing("Pagi")
 
 def job_evening_macro():
-    logging.info("Running job_evening_macro")
+    run_macro_briefing("Malam")
 
 def start_scheduler():
     schedule.every().day.at("05:00").do(job_morning_email)

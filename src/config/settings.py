@@ -13,6 +13,9 @@ IMAP_SERVER = os.getenv('IMAP_SERVER', 'imap.gmail.com')
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY') or os.getenv('RESEND_EMAIL_KEVIN_HARLY')
 RESEND_SENDER_EMAIL = os.getenv('RESEND_SENDER_EMAIL', 'onboarding@resend.dev')
+FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY') or os.getenv('FINHUB_API_KEY')
+
+
 
 
 def setup_logging():
