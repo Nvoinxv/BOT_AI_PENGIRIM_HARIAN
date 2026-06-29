@@ -27,26 +27,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 5. Buat Pengguna Non-Root (Keamanan Tambahan untuk VPS)
-RUN groupadd -r beatrice && useradd -r -g beatrice -d /app -s /sbin/nologin -c "Beatrice Bot User" beatrice
-
-# 6. Atur Direktori Kerja
+# 5. Atur Direktori Kerja
 WORKDIR $APP_HOME
 
-# 7. Salin & Instal Dependensi Python (Memanfaatkan Cache Layer Docker)
+# 6. Salin & Instal Dependensi Python (Memanfaatkan Cache Layer Docker)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# 8. Salin Seluruh Kode Sumber Project
+# 7. Salin Seluruh Kode Sumber Project
 COPY . .
 
-# 9. Buat Folder Logs & Berikan Hak Akses Penuh ke Pengguna Non-Root
-RUN mkdir -p $APP_HOME/logs \
-    && chown -R beatrice:beatrice $APP_HOME
+# 8. Buat Folder Logs
+RUN mkdir -p $APP_HOME/logs
 
-# 10. Beralih ke Pengguna Non-Root
-USER beatrice
-
-# 11. Perintah Utama Menjalankan Bot
+# 9. Perintah Utama Menjalankan Bot
 CMD ["python", "main.py"]
