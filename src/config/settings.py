@@ -1,8 +1,15 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import logging
 
-load_dotenv()
+# Pastikan memuat .env langsung dari folder akar project (C:\Users\Nvoinvx\Downloads\Sender_Bot_Daily)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+else:
+    load_dotenv()
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 DISCORD_USER_ID = os.getenv('DISCORD_USER_ID')
