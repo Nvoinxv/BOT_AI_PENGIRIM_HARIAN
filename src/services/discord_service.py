@@ -7,6 +7,13 @@ from src.services.gemini_service import get_chat_response
 
 logger = logging.getLogger(__name__)
 
+# Membungkam warning voice (PyNaCl / davey) karena Beatrice fokus 100% pada DM & Text Chatbot
+class VoiceWarningFilter(logging.Filter):
+    def filter(self, record):
+        return "voice will NOT be supported" not in record.getMessage()
+
+logging.getLogger('discord.client').addFilter(VoiceWarningFilter())
+
 class BeatriceDiscordBot(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
