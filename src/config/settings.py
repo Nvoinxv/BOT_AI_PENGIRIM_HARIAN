@@ -19,4 +19,6 @@ FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY') or os.getenv('FINHUB_API_KEY')
 
 
 def setup_logging():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    from src.utils.logger import setup_logging as prof_setup_logging
+    prof_setup_logging()
+
