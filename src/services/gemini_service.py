@@ -181,27 +181,27 @@ Data Kalender Ekonomi (Economic Calendar):
 
 TUGAS ANDA:
 1. Ringkaslah berita dan event kalender di atas dengan bahasa Indonesia yang SANGAT MUDAH DIPAHAMI oleh pemula sekalipun (hindari jargon rumit tanpa penjelasan). Jika ada berita yang sama persis dengan riwayat sebelumnya, abaikan atau pilih berita lain.
-2. Tentukan sentimen pasar secara keseluruhan dan per kategori: apakah BULLISH (🟢 Bull), BEARISH (🔴 Bear), atau SIDEWAYS (🟡 Sideways).
-3. KHUSUS UNTUK KALENDER EKONOMI: Berikan konfirmasi sentimen dampaknya (🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS) untuk setiap event penting serta penjelasan mudah 1 kalimat mengapa angka/estimasi tersebut berdampak demikian terhadap pasar aset berisiko/kripto.
+2. Tentukan sentimen pasar secara keseluruhan dan per kategori: apakah BULLISH (🟢 Bull), BEARISH (🔴 Bear), atau SIDEWAYS (🟡 Sideways). PASTIKAN Anda menyebutkan secara spesifik sentimen tersebut BERLAKU UNTUK ASET APA (Misal: "Bearish for Crypto", "Bullish for USD", "Sideways for Stocks").
+3. KHUSUS UNTUK KALENDER EKONOMI: Berikan konfirmasi sentimen dampaknya (🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS) beserta aset spesifiknya (misal: "Bullish for USD") untuk setiap event penting serta penjelasan mudah 1 kalimat mengapa angka/estimasi tersebut berdampak demikian.
 
 Gunakan format STRICT berikut ini:
 
 📊 BRIEFING PASAR & EKONOMI (FINNHUB & KALENDER)
 Tanggal: {date_wib_str}
 ━━━━━━━━━━━━━━━━━━━━━
-🔥 SENTIMENT PASAR SAAT INI: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS]
+🔥 SENTIMENT PASAR SAAT INI: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS] for [Nama Aset/Market]
 [Alasan singkat 1-2 kalimat dengan bahasa gampang dipahami]
 ━━━━━━━━━━━━━━━━━━━━━
 📆 KALENDER EKONOMI AS (Konfirmasi Sentimen)
 * [Jam WIB] - [Nama Event] | Est: [X] vs Act: [Y]
-  👉 Sentimen: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS] ([Alasan singkat dampak event ini])
+  👉 Sentimen: [🟢 BULLISH / 🔴 BEARISH / 🟡 SIDEWAYS] for [Nama Aset] ([Alasan singkat dampak event ini])
 * [Jam WIB] - [Nama Event] ...
 ━━━━━━━━━━━━━━━━━━━━━
-🪙 BERITA KRIPTO (Sentimen: [Bull/Bear/Sideways])
+🪙 BERITA KRIPTO (Sentimen: [Bull/Bear/Sideways] for Crypto)
 * [poin 1 diringkas mudah]
 * [poin 2 diringkas mudah]
 ━━━━━━━━━━━━━━━━━━━━━
-💵 BERITA FOREX & EKONOMI (Sentimen: [Bull/Bear/Sideways])
+💵 BERITA FOREX & EKONOMI (Sentimen: [Bull/Bear/Sideways] for [USD/Forex])
 * [poin 1 diringkas mudah]
 * [poin 2 diringkas mudah]
 ━━━━━━━━━━━━━━━━━━━━━
