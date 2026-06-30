@@ -2,6 +2,7 @@ import discord
 import logging
 import asyncio
 import threading
+import time
 from src.config.settings import DISCORD_TOKEN, DISCORD_USER_ID
 from src.services.gemini_service import get_chat_response
 
@@ -62,6 +63,8 @@ def run_discord_bot():
     try:
         # Jalankan bot
         bot_client.run(DISCORD_TOKEN)
+    except discord.errors.LoginFailure as e:
+        logger.error(f"Gagal menjalankan bot Discord: Improper token has been passed. Pastikan DISCORD_TOKEN di .env valid, tidak ada spasi/kutip berlebih, atau belum direset oleh Discord. Detail: {e}")
     except Exception as e:
         logger.error(f"Gagal menjalankan bot Discord: {e}")
 
@@ -84,13 +87,19 @@ async def _send_dm_async(user_id: int, content: str):
         return True
     return False
 
-def send_discord_dm_sync(message_content: str) -> bool:
+def send_discord_dm_sync(message_content: str, timeout: int = 25) -> bool:
     """
     Mengirim pesan Direct Message (DM) ke akun Discord Kevin dari background task/scheduler.
+    Menunggu otomatis bila bot sedang proses login saat testing/startup.
     """
     global bot_client
+    
+    start_wait = time.time()
+    while (not bot_client or not bot_client.is_ready()) and (time.time() - start_wait < timeout):
+        time.sleep(1)
+        
     if not bot_client or not bot_client.is_ready():
-        logger.warning("Bot Discord belum siap / tidak aktif, gagal mengirim DM ke Kevin.")
+        logger.warning("Bot Discord belum siap / tidak aktif (atau token tidak valid), gagal mengirim DM ke Kevin.")
         return False
     
     target_id = DISCORD_USER_ID if DISCORD_USER_ID else "1177248485733568543"

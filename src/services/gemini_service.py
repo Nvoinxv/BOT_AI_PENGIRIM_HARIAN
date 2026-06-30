@@ -11,6 +11,99 @@ if GEMINI_API_KEY:
 else:
     logger.warning("GEMINI_API_KEY tidak ditemukan di .env!")
 
+_cached_model_name = None
+
+def get_best_gemini_model_name() -> str:
+    """
+    Menentukan model Gemini yang tersedia di akun melalui panggilan API list_models().
+    Hal ini mencegah error 404 ketika model default tidak tersedia atau berbeda penamaan di v1beta.
+    """
+    global _cached_model_name
+    if _cached_model_name:
+        return _cached_model_name
+
+    preferred_models = [
+        "gemini-1.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-pro"
+    ]
+
+    try:
+        available_models = []
+        for m in genai.list_models():
+            if 'generateContent' in getattr(m, 'supported_generation_methods', []):
+                available_models.append(m.name)
+        
+        if available_models:
+            logger.info(f"Model Gemini yang mendukung generateContent di API ini: {available_models}")
+            for pref in preferred_models:
+                for avail in available_models:
+                    if pref in avail:
+                        logger.info(f"Memilih model Gemini optimal: {avail}")
+                        _cached_model_name = avail
+                        return avail
+            
+            _cached_model_name = available_models[0]
+            logger.info(f"Memilih model Gemini alternatif: {_cached_model_name}")
+            return _cached_model_name
+    except Exception as e:
+        logger.warning(f"Gagal memeriksa genai.list_models(): {e}. Menggunakan fallback.")
+
+    return "gemini-1.5-flash"
+
+def generate_content_safe(prompt: str, system_instruction: str) -> str:
+    """
+    Memanggil Gemini API dengan mekanisme fallback otomatis jika terjadi error 404 (model not found).
+    """
+    global _cached_model_name
+    model_name = get_best_gemini_model_name()
+    
+    candidate_models = [
+        model_name,
+        "models/gemini-1.5-flash",
+        "models/gemini-1.5-flash-latest",
+        "models/gemini-2.0-flash",
+        "models/gemini-1.5-pro",
+        "models/gemini-pro",
+        "gemini-1.5-flash",
+        "gemini-pro"
+    ]
+    
+    seen = set()
+    last_error = None
+    
+    for candidate in candidate_models:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        
+        try:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=candidate,
+                    system_instruction=system_instruction
+                )
+                response = model.generate_content(prompt)
+            except TypeError:
+                model = genai.GenerativeModel(model_name=candidate)
+                response = model.generate_content(f"{system_instruction}\n\n{prompt}")
+                
+            _cached_model_name = candidate
+            return response.text.strip()
+        except Exception as e:
+            last_error = e
+            err_str = str(e)
+            if "404" in err_str or "not found" in err_str.lower() or "not supported" in err_str.lower():
+                logger.warning(f"Model {candidate} gagal (404/Not Supported). Mencoba model fallback berikutnya...")
+                _cached_model_name = None
+                continue
+            else:
+                logger.error(f"Error saat generate content dengan {candidate}: {e}")
+                raise e
+                
+    raise last_error if last_error else Exception("Semua model Gemini gagal dijalankan.")
+
 def generate_morning_summary(date_wib_str: str, emails_content: str) -> str:
     """
     Menghasilkan ringkasan email harian (Pagi) dengan personalitas Beatrice.
@@ -49,12 +142,7 @@ Have a great day! ❤️
 """
 
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=system_instruction
-        )
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        return generate_content_safe(prompt, system_instruction)
     except Exception as e:
         logger.error(f"Error dari Gemini API (Morning Summary): {e}")
         return "Maaf Kevin, Beatrice mengalami masalah saat membaca email hari ini. 😔"
@@ -114,12 +202,7 @@ Tanggal: {date_wib_str}
 [Kesimpulan & saran pantauan santai dari Beatrice untuk Kevin]
 """
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=system_instruction
-        )
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        return generate_content_safe(prompt, system_instruction)
     except Exception as e:
         logger.error(f"Error dari Gemini API (Macro Summary): {e}")
         return "📊 BRIEFING PASAR & EKONOMI\n━━━━━━━━━━━━━━━━━━━━━\n🔥 SENTIMENT PASAR SAAT INI: 🟡 SIDEWAYS\nPasar sedang konsolidasi menanti data baru.\n\n💡 INSIGHT BEATRICE\nMaaf Kevin, Beatrice mengalami sedikit kendala saat memproses data AI saat ini. Tetap kelola risiko dengan baik ya! ❤️"
@@ -132,21 +215,41 @@ def get_chat_response(user_message: str) -> str:
     """
     Memproses pesan masuk dari user dan membalas menggunakan Gemini Chat Session.
     """
-    global chat_session
+    global chat_session, _cached_model_name
     
     if chat_session is None:
         system_instruction = (
             "You are Beatrice, Kevin's personal AI assistant. "
             "You are helpful, friendly, speak in Indonesian, and assist Kevin with his daily tasks."
         )
-        try:
-            model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
-                system_instruction=system_instruction
-            )
-            chat_session = model.start_chat(history=[])
-        except Exception as e:
-            logger.error(f"Gagal inisialisasi Gemini Chat Session: {e}")
+        model_name = get_best_gemini_model_name()
+        candidate_models = [
+            model_name,
+            "models/gemini-1.5-flash",
+            "models/gemini-1.5-flash-latest",
+            "models/gemini-2.0-flash",
+            "models/gemini-1.5-pro",
+            "gemini-1.5-flash"
+        ]
+        seen = set()
+        for candidate in candidate_models:
+            if not candidate or candidate in seen:
+                continue
+            seen.add(candidate)
+            try:
+                model = genai.GenerativeModel(
+                    model_name=candidate,
+                    system_instruction=system_instruction
+                )
+                chat_session = model.start_chat(history=[])
+                _cached_model_name = candidate
+                break
+            except Exception as e:
+                logger.warning(f"Gagal mulai chat session dengan model {candidate}: {e}")
+                _cached_model_name = None
+                chat_session = None
+        
+        if chat_session is None:
             return "Maaf Kevin, Beatrice sedang mengalami masalah saat menyiapkan chatbot. 😔"
         
     try:
@@ -154,4 +257,5 @@ def get_chat_response(user_message: str) -> str:
         return response.text.strip()
     except Exception as e:
         logger.error(f"Error dari Gemini API (Chatbot): {e}")
+        chat_session = None
         return "Maaf Kevin, Beatrice sedang mengalami sedikit gangguan sistem saat membalas pesan. 😔"

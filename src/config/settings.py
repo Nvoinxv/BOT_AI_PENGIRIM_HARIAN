@@ -11,16 +11,22 @@ if env_path.exists():
 else:
     load_dotenv()
 
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-DISCORD_USER_ID = os.getenv('DISCORD_USER_ID')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-EMAIL_USER = os.getenv('EMAIL_USER')
-EMAIL_PASS = os.getenv('EMAIL_PASS')
-IMAP_SERVER = os.getenv('IMAP_SERVER', 'imap.gmail.com')
-SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-RESEND_API_KEY = os.getenv('RESEND_API_KEY') or os.getenv('RESEND_EMAIL_KEVIN_HARLY')
-RESEND_SENDER_EMAIL = os.getenv('RESEND_SENDER_EMAIL', 'onboarding@resend.dev')
-FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY') or os.getenv('FINHUB_API_KEY')
+def clean_env(val: str):
+    if not val:
+        return None
+    cleaned = str(val).strip().strip('\'"')
+    return cleaned if cleaned else None
+
+DISCORD_TOKEN = clean_env(os.getenv('DISCORD_TOKEN'))
+DISCORD_USER_ID = clean_env(os.getenv('DISCORD_USER_ID'))
+GEMINI_API_KEY = clean_env(os.getenv('GEMINI_API_KEY'))
+EMAIL_USER = clean_env(os.getenv('EMAIL_USER'))
+EMAIL_PASS = clean_env(os.getenv('EMAIL_PASS'))
+IMAP_SERVER = clean_env(os.getenv('IMAP_SERVER')) or 'imap.gmail.com'
+SMTP_SERVER = clean_env(os.getenv('SMTP_SERVER')) or 'smtp.gmail.com'
+RESEND_API_KEY = clean_env(os.getenv('RESEND_API_KEY')) or clean_env(os.getenv('RESEND_EMAIL_KEVIN_HARLY'))
+RESEND_SENDER_EMAIL = clean_env(os.getenv('RESEND_SENDER_EMAIL')) or 'onboarding@resend.dev'
+FINNHUB_API_KEY = clean_env(os.getenv('FINNHUB_API_KEY')) or clean_env(os.getenv('FINHUB_API_KEY'))
 
 
 

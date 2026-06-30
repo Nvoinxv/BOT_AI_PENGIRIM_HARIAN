@@ -79,12 +79,20 @@ def job_morning_macro():
 def job_evening_macro():
     run_macro_briefing("Malam")
 
-def start_scheduler():
+def start_scheduler(run_immediately: bool = True):
     schedule.every().day.at("05:00").do(job_morning_email)
     schedule.every().day.at("05:30").do(job_bible_verse)
     schedule.every().day.at("06:00").do(job_morning_macro)
     schedule.every().day.at("20:00").do(job_evening_macro)
     
+    if run_immediately:
+        logger.info("🧪 [TESTING MODE] Menjalankan uji coba briefing makro (Malam) sekarang sebelum menunggu jadwal...")
+        try:
+            job_evening_macro()
+            logger.info("✅ Uji coba selesai. Sekarang masuk ke mode penjadwalan harian (Scheduler Loop)...")
+        except Exception as e:
+            logger.error(f"Terjadi kesalahan saat uji coba awal: {e}")
+
     logging.info("Scheduler started. Waiting for jobs...")
     while True:
         schedule.run_pending()
