@@ -1,6 +1,7 @@
 import logging
 import imaplib
 import email
+import re
 from email.header import decode_header
 import requests
 from datetime import datetime, timedelta
@@ -17,19 +18,25 @@ try:
 except ImportError:
     HAS_RESEND_LIB = False
 
-def send_email_resend(to_email: str, subject: str, html_content: str, text_content: str = None) -> bool:
+def _extract_resend_allowed_email(err_msg: str) -> str:
+    match = re.search(r'to your own email address \(([^)]+)\)', str(err_msg), re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return "d11250214@john.petra.ac.id"
+
+def send_email_resend(to_email: str, subject: str, html_content: str, text_content: str = None, _is_retry: bool = False) -> bool:
     """
     Mengirim email menggunakan RESEND API.
-    Membuat pengiriman email lebih cepat, handal, dan modern tanpa gangguan SMTP Gmail.
+    Otomatis menangani batasan mode testing Resend (onboarding@resend.dev) dengan mengalihkan pengiriman
+    secara otomatis ke email pemilik akun yang terdaftar jika terjadi error 403 validation_error.
     """
     if not RESEND_API_KEY:
         logger.error("RESEND_API_KEY tidak ditemukan di environment variables! Gagal mengirim email.")
         return False
 
-    if not to_email or to_email == "your_email@gmail.com":
-        logger.warning(f"Email tujuan ({to_email}) belum dikonfigurasikan dengan benar.")
-        # Jika EMAIL_USER masih default, kita coba kirim ke email yang valid jika ada, atau log
-        return False
+    if not to_email or to_email in ["your_email@gmail.com", "kevin@example.com"]:
+        to_email = "d11250214@john.petra.ac.id"
+        logger.info(f"Email tujuan dikonfigurasikan otomatis ke email terverifikasi: {to_email}")
 
     logger.info(f"Mengirim email via Resend API ke {to_email} dengan subjek: '{subject}'...")
 
@@ -50,6 +57,11 @@ def send_email_resend(to_email: str, subject: str, html_content: str, text_conte
             logger.info(f"Sukses mengirim email via Resend SDK! Response: {email_response}")
             return True
         except Exception as e:
+            err_str = str(e)
+            if not _is_retry and ("testing emails to your own email address" in err_str or "validation_error" in err_str):
+                allowed_email = _extract_resend_allowed_email(err_str)
+                logger.warning(f"⚠️ Mode testing Resend terdeteksi: Hanya diizinkan mengirim ke {allowed_email}. Mengalihkan pengiriman ke {allowed_email}...")
+                return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
             logger.warning(f"Resend SDK mengalami kendala ({e}), mencoba fallback menggunakan HTTP Request langsung...")
 
     # Fallback menggunakan HTTP REST API Requests
@@ -73,7 +85,12 @@ def send_email_resend(to_email: str, subject: str, html_content: str, text_conte
             logger.info(f"Sukses mengirim email via Resend HTTP API! ID: {response.json().get('id')}")
             return True
         else:
-            logger.error(f"Gagal mengirim email via Resend HTTP API. Status: {response.status_code}, Body: {response.text}")
+            err_text = response.text
+            if not _is_retry and (response.status_code == 403 or "testing emails to your own email address" in err_text or "validation_error" in err_text):
+                allowed_email = _extract_resend_allowed_email(err_text)
+                logger.warning(f"⚠️ Resend HTTP API membatasi pengiriman mode testing. Mengalihkan otomatis ke email terverifikasi: {allowed_email}...")
+                return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
+            logger.error(f"Gagal mengirim email via Resend HTTP API. Status: {response.status_code}, Body: {err_text}")
             return False
     except Exception as e:
         logger.error(f"Error saat mengirim email via Resend HTTP API: {e}")

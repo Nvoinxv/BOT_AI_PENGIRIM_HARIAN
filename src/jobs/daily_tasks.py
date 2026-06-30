@@ -29,7 +29,7 @@ def job_morning_email():
         html_content = format_summary_to_html(summary, title=f"📧 Rangkuman Gmail Petraku - {date_str}")
         
         # 4. Kirim via Resend API
-        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER != "your_email@gmail.com" else "kevin@example.com"
+        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER not in ["your_email@gmail.com", "kevin@example.com"] else "d11250214@john.petra.ac.id"
         success = send_email_resend(
             to_email=recipient,
             subject=f"✨ Beatrice Email Briefing (Petraku Inbox) - {date_str}",
