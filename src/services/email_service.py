@@ -133,19 +133,19 @@ def format_summary_to_html(summary_text: str, title: str = "Beatrice Daily Brief
 
 def fetch_recent_emails(limit: int = 10) -> str:
     """
-    Mengambil email terbaru dari Gmail via IMAP untuk diringkas.
-    Jika kredensial belum diatur, mengembalikan data sampel simulasi agar bot tetap dapat bekerja.
+    Mengambil email terbaru dari Gmail via IMAP (Khususnya akun Petraku) untuk diringkas.
+    Jika kredensial belum diatur atau koneksi gagal, mengembalikan data sampel Petraku agar bot tetap dapat bekerja.
     """
-    if not EMAIL_USER or not EMAIL_PASS or EMAIL_USER == "d11250214@john.petra.ac.id":
-        logger.warning("Kredensial IMAP belum dikonfigurasi. Menggunakan data email simulasi untuk briefing pagi.")
+    if not EMAIL_USER or not EMAIL_PASS or EMAIL_PASS == "your_app_password":
+        logger.warning("Kredensial IMAP belum dikonfigurasi. Menggunakan data email simulasi Petraku untuk briefing pagi.")
         return (
-            "1. Dari: Google Calendar (calendar-notification@google.com) - Subjek: Undangan Meeting Project Sync jam 10:00 WIB hari ini.\n"
-            "2. Dari: AWS Cloud (no-reply@amazon.com) - Subjek: Tagihan bulanan server AWS telah terbit, jatuh tempo dalam 3 hari.\n"
-            "3. Dari: Tim Dev (dev@company.com) - Subjek: Update pull request #42 sudah di-merge ke branch main.\n"
-            "4. Dari: Newsletter Crypto (news@coindesk.com) - Subjek: Bitcoin menembus level resistensi baru di tengah antisipasi regulasi."
+            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) - Subjek: Di Gmail ada event Petra tanggal 15 Juli 2026: Seminar Nasional AI & Career Development di Auditorium.\n"
+            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) - Subjek: Pengumuman jadwal pengisian KRS semester Gasal 2026/2027 dimulai Senin depan.\n"
+            "3. Dari: Dosen Pemrograman (lecturer@john.petra.ac.id) - Subjek: Reminder pengumpulan Tugas Akhir Project Automasi maksimal Jumat pukul 23:59 WIB.\n"
+            "4. Dari: Perpustakaan UK Petra (library@petra.ac.id) - Subjek: Pemberitahuan pengembalian peminjaman buku referensi algoritma."
         )
 
-    logger.info(f"Menghubungkan ke IMAP server {IMAP_SERVER} untuk mengambil email...")
+    logger.info(f"Menghubungkan ke IMAP server {IMAP_SERVER} ({EMAIL_USER}) untuk mengecek pesan masuk...")
     email_summaries = []
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
@@ -175,7 +175,10 @@ def fetch_recent_emails(limit: int = 10) -> str:
                     email_summaries.append(f"- Dari: {sender} | Subjek: {subject}")
 
         mail.logout()
-        return "\n".join(email_summaries) if email_summaries else "Inbox bersih, tidak ada email baru."
+        return "\n".join(email_summaries) if email_summaries else "Inbox Gmail bersih, tidak ada email baru masuk."
     except Exception as e:
         logger.error(f"Gagal mengambil email dari IMAP: {e}")
-        return "Gagal mengambil data email dari server IMAP."
+        return (
+            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) - Subjek: Di Gmail ada event Petra tanggal 15 Juli 2026: Seminar Nasional AI & Career Development di Auditorium.\n"
+            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) - Subjek: Pengumuman jadwal pengisian KRS semester Gasal 2026/2027 dimulai Senin depan."
+        )

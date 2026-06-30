@@ -10,8 +10,8 @@ dan menghasilkan renungan harian berformat rapi untuk Kevin.
 import random
 import logging
 import requests
-from src.config.settings import EMAIL_USER, GEMINI_API_KEY
-from src.services.email_service import format_summary_to_html, send_email_resend
+from src.config.settings import GEMINI_API_KEY
+from src.services.discord_service import send_discord_dm_sync
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
@@ -121,9 +121,9 @@ Gunakan format STRICT berikut:
 def run_daily_bible_job():
     """
     Eksekutor utama untuk tugas harian (Job) renungan Alkitab.
-    Mengambil dari API -> Membuat Renungan -> Mengirim ke Email Kevin via Resend.
+    Mengambil dari API -> Membuat Renungan -> Mengirim langsung via Discord DM ke Kevin.
     """
-    logger.info("🙏 Memulai tugas harian: Pengiriman Ayat & Renungan Alkitab...")
+    logger.info("🙏 Memulai tugas harian: Pengiriman Ayat & Renungan Alkitab via Discord DM...")
     try:
         # 1. Pilih referensi acak atau ambil random dari API
         use_random_endpoint = random.choice([True, False])
@@ -135,21 +135,12 @@ def run_daily_bible_job():
         devotional_content = generate_devotional_reflection(verse_data)
         logger.info("✨ Konten renungan pagi berhasil disusun.")
         
-        # 3. Format ke HTML & Kirim Email via Resend API
-        title = f"📖 Renungan Pagi Beatrice - {verse_data['reference']}"
-        html_content = format_summary_to_html(devotional_content, title=title)
-        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER != "your_email@gmail.com" else "kevin@example.com"
-        
-        success = send_email_resend(
-            to_email=recipient,
-            subject=title,
-            html_content=html_content,
-            text_content=devotional_content
-        )
+        # 3. Kirim via Discord DM
+        success = send_discord_dm_sync(devotional_content)
         if success:
-            logger.info(f"📬 Renungan Alkitab ({verse_data['reference']}) berhasil dikirim via Resend API.")
+            logger.info(f"💬 Renungan Alkitab ({verse_data['reference']}) berhasil dikirim via Discord DM.")
         else:
-            logger.error("❌ Gagal mengirim email Renungan Alkitab via Resend API.")
+            logger.warning("⚠️ Gagal mengirim Renungan via Discord DM (bot mungkin belum siap atau DM nonaktif).")
             
         return devotional_content
     except Exception as e:

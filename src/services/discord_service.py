@@ -72,3 +72,32 @@ def start_discord_bot_in_background():
     thread = threading.Thread(target=run_discord_bot, daemon=True)
     thread.start()
     return thread
+
+async def _send_dm_async(user_id: int, content: str):
+    global bot_client
+    user = bot_client.get_user(user_id)
+    if not user:
+        user = await bot_client.fetch_user(user_id)
+    if user:
+        for i in range(0, len(content), 1900):
+            await user.send(content[i:i+1900])
+        return True
+    return False
+
+def send_discord_dm_sync(message_content: str) -> bool:
+    """
+    Mengirim pesan Direct Message (DM) ke akun Discord Kevin dari background task/scheduler.
+    """
+    global bot_client
+    if not bot_client or not bot_client.is_ready():
+        logger.warning("Bot Discord belum siap / tidak aktif, gagal mengirim DM ke Kevin.")
+        return False
+    
+    target_id = DISCORD_USER_ID if DISCORD_USER_ID else "1177248485733568543"
+    try:
+        user_id = int(target_id)
+        future = asyncio.run_coroutine_threadsafe(_send_dm_async(user_id, message_content), bot_client.loop)
+        return future.result(timeout=15)
+    except Exception as e:
+        logger.error(f"Gagal mengirim DM Discord ke Kevin: {e}")
+        return False
