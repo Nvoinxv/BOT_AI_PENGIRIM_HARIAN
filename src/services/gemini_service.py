@@ -23,10 +23,7 @@ def get_best_gemini_model_name() -> str:
         return _cached_model_name
 
     preferred_models = [
-        "gemini-1.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-pro",
-        "gemini-pro"
+        "gemini-2.5-flash",
     ]
 
     try:
@@ -50,7 +47,7 @@ def get_best_gemini_model_name() -> str:
     except Exception as e:
         logger.warning(f"Gagal memeriksa genai.list_models(): {e}. Menggunakan fallback.")
 
-    return "gemini-1.5-flash"
+    return "gemini-2.5-flash"
 
 def generate_content_safe(prompt: str, system_instruction: str) -> str:
     """
@@ -61,13 +58,7 @@ def generate_content_safe(prompt: str, system_instruction: str) -> str:
     
     candidate_models = [
         model_name,
-        "models/gemini-1.5-flash",
-        "models/gemini-1.5-flash-latest",
-        "models/gemini-2.0-flash",
-        "models/gemini-1.5-pro",
-        "models/gemini-pro",
-        "gemini-1.5-flash",
-        "gemini-pro"
+        "gemini-2.5-flash"
     ]
     
     seen = set()
