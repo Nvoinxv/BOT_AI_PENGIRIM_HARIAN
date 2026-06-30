@@ -113,6 +113,9 @@ def send_discord_dm_sync(message_content: str, timeout: int = 25) -> bool:
         user_id = int(target_id)
         future = asyncio.run_coroutine_threadsafe(_send_dm_async(user_id, message_content), bot_client.loop)
         return future.result(timeout=15)
+    except discord.Forbidden as e:
+        logger.error(f"❌ Gagal mengirim DM: Bot tidak memiliki akses (403 Forbidden). Pastikan bot sudah di-invite ke server (guild) yang sama dengan Anda. Detail: {e}")
+        return False
     except Exception as e:
-        logger.error(f"Gagal mengirim DM Discord ke Kevin: {e}")
+        logger.error(f"❌ Gagal mengirim DM Discord ke Kevin: {e}")
         return False
