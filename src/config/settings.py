@@ -27,6 +27,8 @@ SMTP_SERVER = clean_env(os.getenv('SMTP_SERVER')) or 'smtp.gmail.com'
 RESEND_API_KEY = clean_env(os.getenv('RESEND_API_KEY')) or clean_env(os.getenv('RESEND_EMAIL_KEVIN_HARLY'))
 RESEND_SENDER_EMAIL = clean_env(os.getenv('RESEND_SENDER_EMAIL')) or 'onboarding@resend.dev'
 FINNHUB_API_KEY = clean_env(os.getenv('FINNHUB_API_KEY')) or clean_env(os.getenv('FINHUB_API_KEY'))
+MONGO_URL = clean_env(os.getenv('MONGO_URL')) or 'mongodb://mongodb:27017'
+MONGO_DB_NAME = clean_env(os.getenv('MONGO_DB_NAME')) or 'beatrice_daily_db'
 
 
 

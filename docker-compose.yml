@@ -45,11 +45,15 @@ services:
         max-size: "10m"
         max-file: "3"
 
-    # Isolasi Jaringan Khusus
+    # Isolasi Jaringan Khusus & Koneksi ke MongoDB Bersama (satu VPS dengan EDU_BOT)
     networks:
       - beatrice-network
+      - shared_mongo_net
 
 networks:
   beatrice-network:
     name: beatrice_vps_net
     driver: bridge
+  shared_mongo_net:
+    external: true
+    name: shared_mongo_net

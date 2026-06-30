@@ -6,3 +6,4 @@ python-dotenv
 tzdata
 resend
 finnhub-python
+pymongo
