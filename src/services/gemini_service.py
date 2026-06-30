@@ -216,11 +216,7 @@ def get_chat_response(user_message: str) -> str:
         model_name = get_best_gemini_model_name()
         candidate_models = [
             model_name,
-            "models/gemini-1.5-flash",
-            "models/gemini-1.5-flash-latest",
-            "models/gemini-2.0-flash",
-            "models/gemini-1.5-pro",
-            "gemini-1.5-flash"
+            "gemini-2.5-flash"
         ]
         seen = set()
         for candidate in candidate_models:
