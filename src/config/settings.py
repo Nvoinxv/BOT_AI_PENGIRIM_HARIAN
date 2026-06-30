@@ -3,18 +3,19 @@ from pathlib import Path
 from dotenv import load_dotenv
 import logging
 
-# Pastikan memuat .env langsung dari folder akar project (C:\Users\Nvoinvx\Downloads\Sender_Bot_Daily)
+# Memuat variabel lingkungan dengan memprioritaskan environment OS (seperti parameter -e / --env-file dari docker run di VPS)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env_path = BASE_DIR / ".env"
 if env_path.exists():
-    load_dotenv(dotenv_path=env_path)
+    load_dotenv(dotenv_path=env_path, override=False)
 else:
-    load_dotenv()
+    load_dotenv(override=False)
 
 def clean_env(val: str):
     if not val:
         return None
-    cleaned = str(val).strip().strip('\'"')
+    # Bersihkan carriage returns (\r dari CRLF Windows di Linux Docker), newline (\n), tab, BOM (\ufeff), zero-width space (\u200b), dan tanda kutip
+    cleaned = str(val).replace('\r', '').replace('\n', '').replace('\t', '').replace('\ufeff', '').replace('\u200b', '').strip().strip('\'"').strip()
     return cleaned if cleaned else None
 
 DISCORD_TOKEN = clean_env(os.getenv('DISCORD_TOKEN'))

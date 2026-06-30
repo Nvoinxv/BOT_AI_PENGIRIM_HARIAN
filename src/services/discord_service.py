@@ -3,7 +3,8 @@ import logging
 import asyncio
 import threading
 import time
-from src.config.settings import DISCORD_TOKEN, DISCORD_USER_ID
+import os
+from src.config.settings import DISCORD_TOKEN, DISCORD_USER_ID, clean_env
 from src.services.gemini_service import get_chat_response
 
 logger = logging.getLogger(__name__)
@@ -51,9 +52,14 @@ bot_client = None
 
 def run_discord_bot():
     global bot_client
-    if not DISCORD_TOKEN:
+    # Ambil ulang dan bersihkan token saat runtime (mendukung parameter -e maupun --env-file di Docker VPS)
+    token = clean_env(os.getenv('DISCORD_TOKEN')) or DISCORD_TOKEN
+    if not token:
         logger.error("DISCORD_TOKEN tidak ditemukan, bot Discord tidak dapat dijalankan.")
         return
+
+    token_preview = f"{token[:8]}...{token[-5:]}" if len(token) > 15 else "INVALID_LEN"
+    logger.info(f"🚀 Memulai koneksi bot Discord dengan token: {token_preview} (Panjang: {len(token)} karakter)")
 
     intents = discord.Intents.default()
     intents.message_content = True
@@ -62,11 +68,11 @@ def run_discord_bot():
     
     try:
         # Jalankan bot
-        bot_client.run(DISCORD_TOKEN)
+        bot_client.run(token)
     except discord.errors.LoginFailure as e:
-        logger.error(f"Gagal menjalankan bot Discord: Improper token has been passed. Pastikan DISCORD_TOKEN di .env valid, tidak ada spasi/kutip berlebih, atau belum direset oleh Discord. Detail: {e}")
+        logger.error(f"❌ Gagal menjalankan bot Discord: Improper token has been passed. Token terdeteksi: {token_preview} (Panjang: {len(token)}). Pastikan DISCORD_TOKEN di .env VPS / parameter -e valid dan belum direset oleh Discord. Detail: {e}")
     except Exception as e:
-        logger.error(f"Gagal menjalankan bot Discord: {e}")
+        logger.error(f"❌ Gagal menjalankan bot Discord: {e}")
 
 def start_discord_bot_in_background():
     """
