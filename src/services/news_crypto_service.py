@@ -4,18 +4,51 @@ from src.config.settings import FINNHUB_API_KEY
 
 logger = logging.getLogger(__name__)
 
+try:
+    import finnhub
+    HAS_FINNHUB_LIB = True
+except ImportError:
+    HAS_FINNHUB_LIB = False
+
 def fetch_finnhub_news(category: str = "general", limit: int = 4) -> str:
     """
     Mengambil berita terbaru dari Finnhub API berdasarkan kategori (general, forex, crypto).
-    Mengembalikan string ringkasan berita mentah untuk diproses oleh Gemini AI.
+    Menggunakan official Finnhub Python SDK agar stabil seperti test_finhub_api.py.
     """
-    if not FINNHUB_API_KEY or FINNHUB_API_KEY == "your_finnhub_api_key":
+    if not FINNHUB_API_KEY or "placeholder" in str(FINNHUB_API_KEY).lower() or FINNHUB_API_KEY == "your_finnhub_api_key":
         logger.warning(f"FINNHUB_API_KEY belum valid. Menggunakan data berita simulasi untuk kategori: {category}")
         return _get_mock_news(category)
 
-    url = f"https://finnhub.io/api/v1/news?category={category}&token={FINNHUB_API_KEY}"
+    # 1. Utamakan menggunakan Official Finnhub SDK (Konsisten dengan test_finhub_api.py)
+    if HAS_FINNHUB_LIB:
+        try:
+            finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
+            news_items = finnhub_client.general_news(category, min_id=0)
+            
+            if not isinstance(news_items, list) or not news_items:
+                return f"Tidak ada berita terbaru untuk kategori {category} saat ini."
+
+            formatted_news = []
+            for item in news_items[:limit]:
+                headline = item.get("headline", "").strip()
+                summary = item.get("summary", "").strip()
+                source = item.get("source", "Finnhub")
+                if headline:
+                    content = f"- [{source}] {headline}: {summary[:150]}..." if summary else f"- [{source}] {headline}"
+                    formatted_news.append(content)
+            
+            return "\n".join(formatted_news) if formatted_news else f"Tidak ada berita signifikan di kategori {category}."
+        except Exception as e:
+            logger.warning(f"Finnhub SDK mengalami kendala ({e}), mencoba fallback via HTTP request langsung...")
+
+    # 2. Fallback menggunakan HTTP Request langsung dengan header yang tepat
+    url = f"https://finnhub.io/api/v1/news?category={category}"
+    headers = {
+        "X-Finnhub-Token": FINNHUB_API_KEY,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             news_items = response.json()
             if not isinstance(news_items, list) or not news_items:
@@ -27,13 +60,12 @@ def fetch_finnhub_news(category: str = "general", limit: int = 4) -> str:
                 summary = item.get("summary", "").strip()
                 source = item.get("source", "Finnhub")
                 if headline:
-                    # Gabungkan headline dan summary singkat
                     content = f"- [{source}] {headline}: {summary[:150]}..." if summary else f"- [{source}] {headline}"
                     formatted_news.append(content)
             
             return "\n".join(formatted_news) if formatted_news else f"Tidak ada berita signifikan di kategori {category}."
         else:
-            logger.error(f"Gagal mengambil berita Finnhub ({category}). Status: {response.status_code}")
+            logger.error(f"Gagal mengambil berita Finnhub HTTP ({category}). Status: {response.status_code}")
             return _get_mock_news(category)
     except Exception as e:
         logger.error(f"Error koneksi ke Finnhub API ({category}): {e}")
