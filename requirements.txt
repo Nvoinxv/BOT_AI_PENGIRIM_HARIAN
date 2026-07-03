@@ -1,6 +1,7 @@
 discord.py
 google-generativeai
 requests
+resend
 schedule
 python-dotenv
 tzdata
