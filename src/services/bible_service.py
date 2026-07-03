@@ -122,9 +122,9 @@ Gunakan format STRICT berikut:
 def run_daily_bible_job():
     """
     Eksekutor utama untuk tugas harian (Job) renungan Alkitab.
-    Mengambil dari API -> Membuat Renungan -> Mengirim langsung via Discord DM ke Kevin.
+    Mengambil dari API -> Membuat Renungan -> Mengirim via Discord DM & Email Resend ke Kevin.
     """
-    logger.info("🙏 Memulai tugas harian: Pengiriman Ayat & Renungan Alkitab via Discord DM...")
+    logger.info("🙏 Memulai tugas harian: Pengiriman Ayat & Renungan Alkitab via Email & Discord DM...")
     try:
         # 1. Pilih referensi acak atau ambil random dari API
         use_random_endpoint = random.choice([True, False])
@@ -137,12 +137,26 @@ def run_daily_bible_job():
         logger.info("✨ Konten renungan pagi berhasil disusun.")
         
         # 3. Kirim via Discord DM
-        success = send_discord_dm_sync(devotional_content)
-        if success:
+        success_dm = send_discord_dm_sync(devotional_content)
+        if success_dm:
             logger.info(f"💬 Renungan Alkitab ({verse_data['reference']}) berhasil dikirim via Discord DM.")
         else:
             logger.warning("⚠️ Gagal mengirim Renungan via Discord DM (bot mungkin belum siap atau DM nonaktif).")
             
+        # 4. Kirim juga via Email Resend
+        html_content = format_summary_to_html(devotional_content, title=f"🙏 Renungan Pagi - {verse_data['reference']}")
+        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER not in ["your_email@gmail.com", "kevin@example.com"] else "d11250214@john.petra.ac.id"
+        success_email = send_email_resend(
+            to_email=recipient,
+            subject=f"🙏 Renungan Pagi & Ayat Alkitab ({verse_data['reference']})",
+            html_content=html_content,
+            text_content=devotional_content
+        )
+        if success_email:
+            logger.info(f"📧 Renungan Alkitab ({verse_data['reference']}) berhasil dikirim via Email.")
+        else:
+            logger.warning("⚠️ Gagal mengirim Renungan via Email Resend API.")
+
         return devotional_content
     except Exception as e:
         logger.error(f"💥 Error pada run_daily_bible_job: {e}", exc_info=True)

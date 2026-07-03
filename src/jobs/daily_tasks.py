@@ -13,7 +13,7 @@ from src.services.discord_service import send_discord_dm_sync
 logger = logging.getLogger(__name__)
 
 def job_morning_email():
-    logger.info("Memulai job_morning_email (Rangkuman Inbox Gmail Petraku via Resend API)...")
+    logger.info("Memulai job_morning_email (Rangkuman Inbox Gmail Petraku via Email & Discord DM)...")
     try:
         now_wib = get_current_wib_time()
         date_str = now_wib.strftime("%d %B %Y")
@@ -28,28 +28,37 @@ def job_morning_email():
         # 3. Format ke HTML estetis
         html_content = format_summary_to_html(summary, title=f"📧 Rangkuman Gmail Petraku - {date_str}")
         
-        # 4. Kirim via Resend API
+        # 4. Kirim via Resend API (Email)
         recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER not in ["your_email@gmail.com", "kevin@example.com"] else "d11250214@john.petra.ac.id"
-        success = send_email_resend(
+        success_email = send_email_resend(
             to_email=recipient,
             subject=f"✨ Beatrice Email Briefing (Petraku Inbox) - {date_str}",
             html_content=html_content,
             text_content=summary
         )
-        if success:
-            logger.info("job_morning_email (Rangkuman Gmail Petraku) selesai dengan sukses.")
+        if success_email:
+            logger.info("📧 job_morning_email selesai dengan sukses terkirim ke Email.")
         else:
-            logger.error("job_morning_email gagal saat pengiriman email via Resend API.")
+            logger.error("⚠️ job_morning_email gagal saat pengiriman email via Resend API.")
+
+        # 5. Kirim juga via Discord DM
+        formatted_dm = f"📧 **RANGKUMAN INBOX GMAIL PETRAKU**\n📅 *{date_str}*\n\n{summary}"
+        success_dm = send_discord_dm_sync(formatted_dm)
+        if success_dm:
+            logger.info("💬 Rangkuman email pagi terkirim via Discord DM.")
+        else:
+            logger.warning("⚠️ Gagal mengirim rangkuman email pagi via Discord DM.")
+
     except Exception as e:
         logger.error(f"Error pada job_morning_email: {e}")
 
 
 def job_bible_verse():
-    logger.info("Menjalankan tugas harian: Renungan Pagi Alkitab (via Discord DM)...")
+    logger.info("Menjalankan tugas harian: Renungan Pagi Alkitab (via Email & Discord DM)...")
     run_daily_bible_job()
 
 def run_macro_briefing(session_name: str):
-    logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub & Kalender (untuk Discord DM)...")
+    logger.info(f"Memulai briefing makro ekonomi & kripto ({session_name}) via Finnhub & Kalender (untuk Email & Discord DM)...")
     try:
         now_wib = get_current_wib_time()
         date_str = now_wib.strftime("%d %B %Y (%H:%M WIB)")
@@ -63,13 +72,28 @@ def run_macro_briefing(session_name: str):
         summary = generate_macro_summary(date_str, news_data, econ_events)
         logger.info(f"Analisa sentimen pasar ({session_name}) berhasil dibuat.")
         
-        # 3. Kirim langsung via Discord DM ke Kevin
+        # 3. Kirim via Discord DM ke Kevin
         formatted_dm = f"📊 **ANALISA PASAR & MAKROEKONOMI ({session_name.upper()})**\n📅 *{date_str}*\n\n{summary}"
-        success = send_discord_dm_sync(formatted_dm)
-        if success:
+        success_dm = send_discord_dm_sync(formatted_dm)
+        if success_dm:
             logger.info(f"💬 Briefing makro {session_name} terkirim via Discord DM.")
         else:
             logger.warning(f"⚠️ Gagal mengirim briefing makro {session_name} via Discord DM.")
+
+        # 4. Kirim juga via Email Resend
+        html_content = format_summary_to_html(summary, title=f"📊 Analisa Pasar & Makroekonomi ({session_name})")
+        recipient = EMAIL_USER if EMAIL_USER and EMAIL_USER not in ["your_email@gmail.com", "kevin@example.com"] else "d11250214@john.petra.ac.id"
+        success_email = send_email_resend(
+            to_email=recipient,
+            subject=f"📊 Beatrice Market Briefing ({session_name}) - {date_str}",
+            html_content=html_content,
+            text_content=summary
+        )
+        if success_email:
+            logger.info(f"📧 Briefing makro {session_name} terkirim via Email Resend API.")
+        else:
+            logger.warning(f"⚠️ Gagal mengirim briefing makro {session_name} via Email Resend API.")
+
     except Exception as e:
         logger.error(f"Error pada run_macro_briefing ({session_name}): {e}")
 
@@ -86,8 +110,11 @@ def start_scheduler(run_immediately: bool = True):
     schedule.every().day.at("20:00").do(job_evening_macro)
     
     if run_immediately:
-        logger.info("🧪 [TESTING MODE] Menjalankan uji coba briefing makro (Malam) sekarang sebelum menunggu jadwal...")
+        logger.info("🧪 [TESTING MODE] Menjalankan uji coba briefing lengkap (Email & Discord DM) sekarang sebelum menunggu jadwal...")
         try:
+            logger.info("--- [TEST 1/2] Menguji pengiriman Briefing Email & DM Pagi ---")
+            job_morning_email()
+            logger.info("--- [TEST 2/2] Menguji pengiriman Analisa Pasar & Makro (Email & DM) ---")
             job_evening_macro()
             logger.info("✅ Uji coba selesai. Sekarang masuk ke mode penjadwalan harian (Scheduler Loop)...")
         except Exception as e:
