@@ -10,8 +10,9 @@ dan menghasilkan renungan harian berformat rapi untuk Kevin.
 import random
 import logging
 import requests
-from src.config.settings import GEMINI_API_KEY
+from src.config.settings import GEMINI_API_KEY, EMAIL_USER
 from src.services.discord_service import send_discord_dm_sync
+from src.services.email_service import send_email_resend, format_summary_to_html
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai

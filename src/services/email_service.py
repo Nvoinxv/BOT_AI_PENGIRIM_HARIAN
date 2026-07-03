@@ -22,6 +22,10 @@ def _extract_resend_allowed_email(err_msg: str) -> str:
     match = re.search(r'to your own email address \(([^)]+)\)', str(err_msg), re.IGNORECASE)
     if match:
         return match.group(1).strip()
+    emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', str(err_msg))
+    for e in emails:
+        if not e.lower().endswith(('@resend.dev', '@resend.com')):
+            return e.strip()
     return "d11250214@john.petra.ac.id"
 
 def send_email_resend(to_email: str, subject: str, html_content: str, text_content: str = None, _is_retry: bool = False) -> bool:
@@ -58,10 +62,11 @@ def send_email_resend(to_email: str, subject: str, html_content: str, text_conte
             return True
         except Exception as e:
             err_str = str(e)
-            if not _is_retry and ("testing emails to your own email address" in err_str or "validation_error" in err_str):
+            if not _is_retry and ("testing emails to your own email address" in err_str or "validation_error" in err_str or "403" in err_str):
                 allowed_email = _extract_resend_allowed_email(err_str)
-                logger.warning(f"⚠️ Mode testing Resend terdeteksi: Hanya diizinkan mengirim ke {allowed_email}. Mengalihkan pengiriman ke {allowed_email}...")
-                return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
+                if allowed_email and allowed_email != to_email:
+                    logger.warning(f"⚠️ Mode testing Resend terdeteksi: Hanya diizinkan mengirim ke {allowed_email}. Mengalihkan pengiriman ke {allowed_email}...")
+                    return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
             logger.warning(f"Resend SDK mengalami kendala ({e}), mencoba fallback menggunakan HTTP Request langsung...")
 
     # Fallback menggunakan HTTP REST API Requests
@@ -88,8 +93,9 @@ def send_email_resend(to_email: str, subject: str, html_content: str, text_conte
             err_text = response.text
             if not _is_retry and (response.status_code == 403 or "testing emails to your own email address" in err_text or "validation_error" in err_text):
                 allowed_email = _extract_resend_allowed_email(err_text)
-                logger.warning(f"⚠️ Resend HTTP API membatasi pengiriman mode testing. Mengalihkan otomatis ke email terverifikasi: {allowed_email}...")
-                return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
+                if allowed_email and allowed_email != to_email:
+                    logger.warning(f"⚠️ Resend HTTP API membatasi pengiriman mode testing. Mengalihkan otomatis ke email terverifikasi: {allowed_email}...")
+                    return send_email_resend(allowed_email, subject, html_content, text_content, _is_retry=True)
             logger.error(f"Gagal mengirim email via Resend HTTP API. Status: {response.status_code}, Body: {err_text}")
             return False
     except Exception as e:
@@ -107,7 +113,7 @@ def format_summary_to_html(summary_text: str, title: str = "Beatrice Daily Brief
         line_clean = line.strip()
         if line_clean.startswith('━'):
             formatted_lines.append('<hr style="border: none; border-top: 1px solid #3b3f54; margin: 16px 0;" />')
-        elif line_clean.startswith('📅') or line_clean.startswith('📧') or line_clean.startswith('📆') or line_clean.startswith('⚡'):
+        elif any(line_clean.startswith(emoji) for emoji in ['📅', '📧', '📆', '⚡', '📊', '🔥', '🪙', '💵', '💡', '📖', '📜']):
             formatted_lines.append(f'<h3 style="color: #ff79c6; margin-top: 20px; margin-bottom: 10px; font-size: 18px;">{line_clean}</h3>')
         elif line_clean.startswith('*'):
             formatted_lines.append(f'<div style="margin-left: 15px; margin-bottom: 8px; color: #e2e8f0;">&#8226; {line_clean[1:].strip()}</div>')
