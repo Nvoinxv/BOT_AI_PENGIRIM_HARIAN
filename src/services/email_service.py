@@ -154,18 +154,19 @@ def format_summary_to_html(summary_text: str, title: str = "Beatrice Daily Brief
     """
     return html_template
 
-def fetch_recent_emails(limit: int = 10) -> str:
+def fetch_recent_emails(limit: int = 15) -> str:
     """
     Mengambil email terbaru dari Gmail via IMAP (Khususnya akun Petraku) untuk diringkas.
-    Jika kredensial belum diatur atau koneksi gagal, mengembalikan data sampel Petraku agar bot tetap dapat bekerja.
+    Mengekstrak subjek dan cuplikan isi pesan (~350 karakter) agar AI dapat mengenali jadwal & deadline kuliah.
+    Jika kredensial belum diatur atau koneksi gagal, mengembalikan data sampel Petraku agar bot tetap bekerja.
     """
     if not EMAIL_USER or not EMAIL_PASS or EMAIL_PASS == "your_app_password":
         logger.warning("Kredensial IMAP belum dikonfigurasi. Menggunakan data email simulasi Petraku untuk briefing pagi.")
         return (
-            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) - Subjek: Di Gmail ada event Petra tanggal 15 Juli 2026: Seminar Nasional AI & Career Development di Auditorium.\n"
-            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) - Subjek: Pengumuman jadwal pengisian KRS semester Gasal 2026/2027 dimulai Senin depan.\n"
-            "3. Dari: Dosen Pemrograman (lecturer@john.petra.ac.id) - Subjek: Reminder pengumpulan Tugas Akhir Project Automasi maksimal Jumat pukul 23:59 WIB.\n"
-            "4. Dari: Perpustakaan UK Petra (library@petra.ac.id) - Subjek: Pemberitahuan pengembalian peminjaman buku referensi algoritma."
+            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) | Subjek: Seminar Nasional AI & Career Development di Auditorium UK Petra | Isi: \"Halo mahasiswa UK Petra! Jangan lewatkan seminar nasional bertajuk AI & Career Development yang akan diadakan pada tanggal 15 Juli 2026 pukul 09:00 WIB di Auditorium Kampus Pusat. Wajib hadir bagi perwakilan himpunan.\"\n"
+            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) | Subjek: Pengumuman Jadwal Pengisian KRS Semester Gasal 2026/2027 | Isi: \"Diberitahukan kepada seluruh mahasiswa bahwa pengisian Rencana Studi (KRS) online via Petraku akan dimulai pada hari Senin depan pukul 08:00 WIB. Pastikan prasyarat matakuliah sudah terpenuhi.\"\n"
+            "3. Dari: Dosen Pemrograman (lecturer@john.petra.ac.id) | Subjek: Reminder Pengumpulan Tugas Akhir Project Automasi | Isi: \"Mengingatkan kembali kepada seluruh mahasiswa kelas Pemrograman Lanjut bahwa deadline pengumpulan kode project automasi di LEAP adalah hari Jumat minggu ini maksimal pukul 23:59 WIB. Keterlambatan tidak ditoleransi.\"\n"
+            "4. Dari: Perpustakaan UK Petra (library@petra.ac.id) | Subjek: Pemberitahuan Jatuh Tempo Peminjaman Buku | Isi: \"Buku referensi 'Algoritma & Struktur Data' yang Anda pinjam akan jatuh tempo dalam 3 hari. Mohon segera mengembalikan atau memperpanjang peminjaman via portal perpustakaan.\""
         )
 
     logger.info(f"Menghubungkan ke IMAP server {IMAP_SERVER} ({EMAIL_USER}) untuk mengecek pesan masuk...")
@@ -195,13 +196,40 @@ def fetch_recent_emails(limit: int = 10) -> str:
                     if isinstance(subject, bytes):
                         subject = subject.decode(encoding if encoding else "utf-8", errors="ignore")
                     sender = msg.get("From")
-                    email_summaries.append(f"- Dari: {sender} | Subjek: {subject}")
+                    
+                    # Ekstraksi cuplikan isi email (body snippet)
+                    body_snippet = ""
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            content_type = part.get_content_type()
+                            content_disposition = str(part.get("Content-Disposition"))
+                            if content_type == "text/plain" and "attachment" not in content_disposition:
+                                try:
+                                    payload = part.get_payload(decode=True)
+                                    if payload:
+                                        body_snippet = payload.decode(part.get_content_charset() or "utf-8", errors="ignore")
+                                        break
+                                except Exception:
+                                    pass
+                    else:
+                        try:
+                            payload = msg.get_payload(decode=True)
+                            if payload:
+                                body_snippet = payload.decode(msg.get_content_charset() or "utf-8", errors="ignore")
+                        except Exception:
+                            pass
+                    
+                    if body_snippet:
+                        body_snippet = re.sub(r'\s+', ' ', body_snippet).strip()[:350]
+                        email_summaries.append(f"- Dari: {sender} | Subjek: {subject} | Isi: \"{body_snippet}...\"")
+                    else:
+                        email_summaries.append(f"- Dari: {sender} | Subjek: {subject}")
 
         mail.logout()
         return "\n".join(email_summaries) if email_summaries else "Inbox Gmail bersih, tidak ada email baru masuk."
     except Exception as e:
         logger.error(f"Gagal mengambil email dari IMAP: {e}")
         return (
-            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) - Subjek: Di Gmail ada event Petra tanggal 15 Juli 2026: Seminar Nasional AI & Career Development di Auditorium.\n"
-            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) - Subjek: Pengumuman jadwal pengisian KRS semester Gasal 2026/2027 dimulai Senin depan."
+            "1. Dari: BEM Petra Christian University (bem@petra.ac.id) | Subjek: Seminar Nasional AI & Career Development di Auditorium UK Petra | Isi: \"Halo mahasiswa UK Petra! Jangan lewatkan seminar nasional bertajuk AI & Career Development yang akan diadakan pada tanggal 15 Juli 2026 pukul 09:00 WIB di Auditorium Kampus Pusat. Wajib hadir bagi perwakilan himpunan.\"\n"
+            "2. Dari: BAKP Petra Christian University (bakp@petra.ac.id) | Subjek: Pengumuman Jadwal Pengisian KRS Semester Gasal 2026/2027 | Isi: \"Diberitahukan kepada seluruh mahasiswa bahwa pengisian Rencana Studi (KRS) online via Petraku akan dimulai pada hari Senin depan pukul 08:00 WIB. Pastikan prasyarat matakuliah sudah terpenuhi.\""
         )

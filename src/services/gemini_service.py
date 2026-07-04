@@ -99,6 +99,7 @@ def generate_content_safe(prompt: str, system_instruction: str) -> str:
 def generate_morning_summary(date_wib_str: str, emails_content: str) -> str:
     """
     Menghasilkan ringkasan email harian (Pagi) dengan personalitas Beatrice.
+    Fokus memprioritaskan email kuliah/kampus (UK Petra/Petraku/BAKP/Dosen) dan hal penting lainnya.
     Dilengkapi pengecekan riwayat MongoDB agar tidak mengulang pola/kalimat yang sama.
     """
     db = get_db()
@@ -106,36 +107,41 @@ def generate_morning_summary(date_wib_str: str, emails_content: str) -> str:
     context_instruction = f"\nCatatan Briefing Pagi Sebelumnya (hindari pengulangan frasa/pengantar yang persis sama):\n{recent_context}\n" if recent_context else ""
 
     system_instruction = (
-        "You are Beatrice, Kevin's personal AI assistant. "
-        "Your task is to analyze Kevin's Gmail data (schedule and important emails) "
-        "and generate a summary push notification in Indonesian without repetitive expressions."
+        "You are Beatrice, Kevin's smart personal AI assistant. "
+        "Your primary task is to analyze Kevin's Gmail inbox, specifically focusing on reading and summarizing "
+        "college/university emails (like Petra Christian University / Petraku, BAKP, lecturers, BEM, assignments, organization) "
+        "and important academic/work schedules or deadlines. Ignore promotional spam or irrelevant newsletters. "
+        "Generate a clear, professional summary in Indonesian without repetitive expressions."
     )
 
     prompt = f"""
 Step 1: The current date in WIB is: {date_wib_str}
 {context_instruction}
-Step 2: Here is the recent Gmail data from the last 24 hours:
+Step 2: Here is the recent Gmail data from the last 24 hours (including subject and body snippets):
 {emails_content}
-Please look for calendar invites, meeting notifications, deadlines, and important alerts.
-Identify the top 3-5 most important emails.
+
+TUGAS ANDA:
+1. Analisis seluruh email di atas. FOKUS UTAMA pada email-email kuliah/kampus (seperti dari Petra Christian University / Petraku / BAKP / dosen / BEM / tugas / organisasi / perpustakaan) serta pengumuman atau jadwal penting lainnya.
+2. Abaikan pesan promosi, spam, atau newsletter umum yang tidak penting bagi kuliah/pekerjaan Kevin.
+3. Ekstrak informasi krusial seperti: jam perkuliahan, deadline pengumpulan tugas, tenggat waktu KRS, atau link meeting/ruangan.
 
 Step 3: Compose a summary in Indonesian (under 3800 chars) using EXACTLY this template:
 
-📅 JADWAL & EMAIL HARI INI
+📅 RANGKUMAN EMAIL KULIAH & PENTING
 {date_wib_str}
 ━━━━━━━━━━━━━━━━━━━━━
-📧 EMAIL PENTING
-* [Pengirim]: [ringkasan 1 kalimat]
-(atau: "Inbox aman ✅" jika tidak ada)
+📧 EMAIL KULIAH & PENTING
+* [Pengirim/Topik]: [Ringkasan jelas 1-2 kalimat beserta detail waktu/ruangan/deadline jika ada]
+(atau: "Inbox aman, tidak ada email kuliah/penting baru ✅" jika tidak ada)
 ━━━━━━━━━━━━━━━━━━━━━
-📆 JADWAL HARI INI
-* [Waktu]: [event]
-(atau: "Hari ini bebas 🎉" jika tidak ada)
+📆 JADWAL & AGENDA HARI INI
+* [Waktu]: [Detail event/perkuliahan/kegiatan]
+(atau: "Hari ini bebas agenda perkuliahan/meeting 🎉" jika tidak ada)
 ━━━━━━━━━━━━━━━━━━━━━
-⚡ PERLU DIPERHATIKAN
-[deadline atau follow-up]
+⚡ DEADLINE / PERLU DIPERHATIKAN
+[Sebutkan deadline tugas, KRS, atau hal penting yang membutuhkan tindakan Kevin dalam waktu dekat]
 ━━━━━━━━━━━━━━━━━━━━━
-Have a great day! ❤️
+Have a productive day, Kevin! ❤️
 """
 
     try:
@@ -147,7 +153,7 @@ Have a great day! ❤️
         return res
     except Exception as e:
         logger.error(f"Error dari Gemini API (Morning Summary): {e}")
-        return "Maaf Kevin, Beatrice mengalami masalah saat membaca email hari ini. 😔"
+        return "Maaf Kevin, Beatrice mengalami masalah saat membaca email kuliah/penting hari ini. 😔"
 
 def generate_macro_summary(date_wib_str: str, news_data: dict, econ_events: str = "") -> str:
     """
