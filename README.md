@@ -11,10 +11,10 @@
 
 ## ✨ Fitur Utama (*Core Capabilities*)
 
-*   📧 **Daily Email Briefing (Resend API):** Mengirimkan buletin ringkasan harian berformat HTML yang elegan langsung ke kotak masuk email Anda setiap pagi dan malam.
-*   📈 **Finnhub & Macro Economic Intelligence:** Memantau berita pasar finansial terkini (Kripto, Forex, dan Saham) serta mengintegrasikan jadwal **Kalender Ekonomi AS** secara real-time.
-*   🤖 **AI Sentiment Analysis (Google Gemini AI):** Menganalisis sentimen pasar secara otomatis dan menyimpulkan arah pergerakan pasar ke dalam indikator jelas: `BULLISH` 🟢, `BEARISH` 🔴, atau `SIDEWAYS` 🟡.
-*   📖 **Daily Bible Devotional (Free Use Bible API):** Mengambil ayat Alkitab resmi menggunakan REST API murni, menerjemahkannya ke dalam bahasa Indonesia yang indah, dan merangkai renungan pagi penyemangat.
+*   📧 **College Email Reader & Briefing (Resend API):** Membaca pesan email masuk dari Gmail via IMAP (khususnya email kuliah UK Petra/Petraku, BAKP, Dosen, BEM, dan deadline penting), lalu mengirimkan buletin ringkasan HTML elegan ke inbox email Anda via Resend API serta duplikat ke Discord DM.
+*   📈 **Finnhub & Macro Intelligence (Eksklusif Discord DM):** Memantau berita pasar finansial terkini (Kripto, Forex, Saham) dan **Kalender Ekonomi AS** secara real-time, dikirimkan **eksklusif hanya ke Discord DM** agar tidak bercampur di inbox email Anda.
+*   🤖 **AI Sentiment & Academic Analysis (Google Gemini AI):** Menganalisis jadwal kuliah/deadline secara cerdas serta menyimpulkan sentimen pasar ke dalam indikator jelas: `BULLISH` 🟢, `BEARISH` 🔴, atau `SIDEWAYS` 🟡.
+*   📖 **Daily Bible Devotional (Eksklusif Discord DM):** Mengambil ayat Alkitab resmi dan merangkai renungan pagi penyemangat yang dikirimkan **eksklusif ke Discord DM**.
 *   💬 **Interactive Discord DM Chatbot:** Asisten personal yang siap merespons pertanyaan dan mengobrol secara privat 24/7 via Direct Message Discord.
 *   🛡️ **Professional Rotating Logger:** Sistem pencatatan log terstruktur dengan zona waktu WIB asli (*WIB Timestamp*) dan pembatasan ukuran file otomatis (*Log Rotation*).
 
@@ -122,12 +122,12 @@ docker compose down
 
 ## 📅 Jadwal Rutinitas Otomatis (Waktu WIB)
 
-| Waktu Eksekusi | Tugas Harian | Deskripsi Layanan |
-| :--- | :--- | :--- |
-| **05:00 WIB** | Briefing Email Pagi | Rangkuman email masuk & agenda harian |
-| **05:30 WIB** | Renungan Alkitab | Pengiriman ayat harian & doa refleksi pagi |
-| **06:00 WIB** | Analisa Pasar Pagi | Rangkuman makroekonomi, kripto & sentimen AI |
-| **20:00 WIB** | Analisa Pasar Malam | Evaluasi penutupan pasar & kalender ekonomi |
+| Waktu Eksekusi | Tugas Harian | Jalur Pengiriman | Deskripsi Layanan |
+| :--- | :--- | :--- | :--- |
+| **05:00 WIB** | Briefing Email Kuliah & Penting | **Resend API & Discord DM** | Rangkuman pesan email kuliah (Petraku/BAKP/Dosen) & agenda |
+| **05:30 WIB** | Renungan Alkitab | **Eksklusif Discord DM** | Pengiriman ayat harian & doa refleksi pagi |
+| **06:00 WIB** | Analisa Pasar Pagi | **Eksklusif Discord DM** | Rangkuman makroekonomi, kripto, forex & kalender AS |
+| **20:00 WIB** | Analisa Pasar Malam | **Eksklusif Discord DM** | Evaluasi penutupan pasar & kalender ekonomi malam |
 
 ---
 *Developed with ❤️ for seamless personal automation.*
