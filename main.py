@@ -46,10 +46,10 @@ def verify_environment():
     logger.info("🔍 Memeriksa konfigurasi sistem & API Key...")
     
     status_checks = [
-        ("Resend Email API", RESEND_API_KEY, "Kirim email harian & briefing"),
-        ("Finnhub Market API", FINNHUB_API_KEY, "Berita Kripto, Forex & Ekonomi"),
-        ("Google Gemini AI", GEMINI_API_KEY, "Analisa sentimen Bull/Bear/Sideways"),
-        ("Discord Bot Token", DISCORD_TOKEN, "Chatbot interaktif via Direct Message")
+        ("Resend Email API", RESEND_API_KEY, "Kirim laporan rangkuman email kuliah ke inbox"),
+        ("Finnhub Market API", FINNHUB_API_KEY, "Berita Kripto, Forex & Ekonomi (Khusus Discord DM)"),
+        ("Google Gemini AI", GEMINI_API_KEY, "Analisa email kuliah & sentimen pasar"),
+        ("Discord Bot Token", DISCORD_TOKEN, "Chatbot DM & penerima eksklusif Renungan/Makro")
     ]
     
     ready_count = 0
@@ -67,10 +67,10 @@ def verify_environment():
 def log_scheduled_jobs():
     """Menampilkan jadwal tugas harian otomatis yang terdaftar."""
     logger.info("📅 Daftar Jadwal Tugas Harian (Waktu WIB):")
-    logger.info("  ⏰ 05:00 WIB ➔ Briefing Email Pagi (Rangkuman Email & Agenda)")
-    logger.info("  ⏰ 05:30 WIB ➔ Ayat Alkitab Harian & Renungan Pagi")
-    logger.info("  ⏰ 06:00 WIB ➔ Analisa Pasar Pagi (Finnhub + Kalender Ekonomi)")
-    logger.info("  ⏰ 20:00 WIB ➔ Analisa Pasar Malam (Finnhub + Kalender Ekonomi)")
+    logger.info("  ⏰ 05:00 WIB ➔ Briefing Email Kuliah & Penting (via Resend API & Discord DM)")
+    logger.info("  ⏰ 05:30 WIB ➔ Renungan Alkitab Harian (Eksklusif via Discord DM)")
+    logger.info("  ⏰ 06:00 WIB ➔ Analisa Pasar & Makro Pagi (Eksklusif via Discord DM)")
+    logger.info("  ⏰ 20:00 WIB ➔ Analisa Pasar & Makro Malam (Eksklusif via Discord DM)")
 
 
 def main():
