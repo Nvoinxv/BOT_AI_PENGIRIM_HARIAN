@@ -20,7 +20,9 @@ def clean_env(val: str):
 
 DISCORD_TOKEN = clean_env(os.getenv('DISCORD_TOKEN'))
 DISCORD_USER_ID = clean_env(os.getenv('DISCORD_USER_ID'))
-GEMINI_API_KEY = clean_env(os.getenv('GEMINI_API_KEY'))
+GEMINI_API_KEY_AKUN_EDWARD_FARREL = clean_env(os.getenv('GEMINI_API_KEY_AKUN_EDWARD_FARREL'))
+GEMINI_API_KEY_KEVIN_PETRA = clean_env(os.getenv('GEMINI_API_KEY_KEVIN_PETRA'))
+GEMINI_API_KEY = GEMINI_API_KEY_KEVIN_PETRA or clean_env(os.getenv('GEMINI_API_KEY')) or GEMINI_API_KEY_AKUN_EDWARD_FARREL
 EMAIL_USER = clean_env(os.getenv('EMAIL_USER'))
 EMAIL_PASS = clean_env(os.getenv('EMAIL_PASS'))
 IMAP_SERVER = clean_env(os.getenv('IMAP_SERVER')) or 'imap.gmail.com'
