@@ -10,7 +10,7 @@ dan menghasilkan renungan harian berformat rapi untuk Kevin.
 import random
 import logging
 import requests
-from src.config.settings import GEMINI_API_KEY
+from src.config.settings import GEMINI_API_KEY, GEMINI_API_KEY_KEVIN_PETRA
 from src.services.discord_service import send_discord_dm_sync
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -74,7 +74,8 @@ def generate_devotional_reflection(verse_data: dict) -> str:
     ref = verse_data["reference"]
     text = verse_data["text"]
     
-    if not GEMINI_API_KEY:
+    api_key = GEMINI_API_KEY_KEVIN_PETRA or GEMINI_API_KEY
+    if not api_key:
         return (
             f"📖 **{ref}**\n\n"
             f"*\"{text}\"*\n\n"
@@ -105,7 +106,12 @@ Gunakan format STRICT berikut:
 🌸 *Blessed morning from Beatrice*
 """
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        if api_key:
+            genai.configure(api_key=api_key)
+        try:
+            model = genai.GenerativeModel("gemini-1.5-flash", client_options={'api_key': api_key})
+        except TypeError:
+            model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
