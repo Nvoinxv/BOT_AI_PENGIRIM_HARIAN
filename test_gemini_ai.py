@@ -6,10 +6,10 @@ from google.genai import types
 # 1. Load variabel dari file .env
 load_dotenv()
 
-# 2. Pastikan API Key aman dan kebaca
-api_key = os.getenv("GEMINI_API_KEY")
+# 2. Pastikan API Key aman dan kebaca (memprioritaskan GEMINI_API_KEY_KEVIN_PETRA untuk tes chatbot)
+api_key = os.getenv("GEMINI_API_KEY_KEVIN_PETRA") or os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY_AKUN_EDWARD_FARREL")
 if not api_key:
-    raise ValueError("Error: GEMINI_API_KEY gak ketemu di file .env, coba cek lagi bro.")
+    raise ValueError("Error: GEMINI_API_KEY_KEVIN_PETRA / GEMINI_API_KEY gak ketemu di file .env, coba cek lagi bro.")
 
 # 3. Inisialisasi client Gemini SDK terbaru
 client = genai.Client(api_key=api_key)

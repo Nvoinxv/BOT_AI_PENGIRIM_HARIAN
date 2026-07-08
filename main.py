@@ -19,6 +19,8 @@ from src.config.settings import (
     FINNHUB_API_KEY,
     DISCORD_TOKEN,
     GEMINI_API_KEY,
+    GEMINI_API_KEY_AKUN_EDWARD_FARREL,
+    GEMINI_API_KEY_KEVIN_PETRA,
     EMAIL_USER
 )
 from src.jobs.daily_tasks import start_scheduler
@@ -48,7 +50,8 @@ def verify_environment():
     status_checks = [
         ("Resend Email API", RESEND_API_KEY, "Kirim laporan rangkuman email kuliah ke inbox"),
         ("Finnhub Market API", FINNHUB_API_KEY, "Berita Kripto, Forex & Ekonomi (Khusus Discord DM)"),
-        ("Google Gemini AI", GEMINI_API_KEY, "Analisa email kuliah & sentimen pasar"),
+        ("Gemini AI (Email)", GEMINI_API_KEY_AKUN_EDWARD_FARREL or GEMINI_API_KEY, "Membaca & merangkum pesan email kuliah (Edward Farrel)"),
+        ("Gemini AI (Makro/DM)", GEMINI_API_KEY_KEVIN_PETRA or GEMINI_API_KEY, "Analisa pasar, renungan & chatbot DM (Kevin Petra)"),
         ("Discord Bot Token", DISCORD_TOKEN, "Chatbot DM & penerima eksklusif Renungan/Makro")
     ]
     
