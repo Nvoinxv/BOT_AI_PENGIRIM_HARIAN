@@ -1,7 +1,11 @@
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
-from src.config.settings import GEMINI_API_KEY
+from src.config.settings import (
+    GEMINI_API_KEY,
+    GEMINI_API_KEY_AKUN_EDWARD_FARREL,
+    GEMINI_API_KEY_KEVIN_PETRA
+)
 from src.services.db_service import get_db
 import logging
 
@@ -12,22 +16,25 @@ if GEMINI_API_KEY:
 else:
     logger.warning("GEMINI_API_KEY tidak ditemukan di .env!")
 
-_cached_model_name = None
+_cached_model_names = {}
 
-def get_best_gemini_model_name() -> str:
+def get_best_gemini_model_name(api_key: str = None) -> str:
     """
     Menentukan model Gemini yang tersedia di akun melalui panggilan API list_models().
     Hal ini mencegah error 404 ketika model default tidak tersedia atau berbeda penamaan di v1beta.
     """
-    global _cached_model_name
-    if _cached_model_name:
-        return _cached_model_name
+    global _cached_model_names
+    cache_key = api_key or "default"
+    if cache_key in _cached_model_names:
+        return _cached_model_names[cache_key]
 
     preferred_models = [
         "gemini-2.5-flash",
     ]
 
     try:
+        if api_key:
+            genai.configure(api_key=api_key)
         available_models = []
         for m in genai.list_models():
             if 'generateContent' in getattr(m, 'supported_generation_methods', []):
@@ -39,23 +46,28 @@ def get_best_gemini_model_name() -> str:
                 for avail in available_models:
                     if pref in avail:
                         logger.info(f"Memilih model Gemini optimal: {avail}")
-                        _cached_model_name = avail
+                        _cached_model_names[cache_key] = avail
                         return avail
             
-            _cached_model_name = available_models[0]
-            logger.info(f"Memilih model Gemini alternatif: {_cached_model_name}")
-            return _cached_model_name
+            _cached_model_names[cache_key] = available_models[0]
+            logger.info(f"Memilih model Gemini alternatif: {_cached_model_names[cache_key]}")
+            return _cached_model_names[cache_key]
     except Exception as e:
         logger.warning(f"Gagal memeriksa genai.list_models(): {e}. Menggunakan fallback.")
 
     return "gemini-2.5-flash"
 
-def generate_content_safe(prompt: str, system_instruction: str) -> str:
+def generate_content_safe(prompt: str, system_instruction: str, api_key: str = None) -> str:
     """
     Memanggil Gemini API dengan mekanisme fallback otomatis jika terjadi error 404 (model not found).
     """
-    global _cached_model_name
-    model_name = get_best_gemini_model_name()
+    global _cached_model_names
+    cache_key = api_key or "default"
+    if api_key:
+        genai.configure(api_key=api_key)
+    client_opts = {'api_key': api_key} if api_key else None
+
+    model_name = get_best_gemini_model_name(api_key=api_key)
     
     candidate_models = [
         model_name,
@@ -74,21 +86,30 @@ def generate_content_safe(prompt: str, system_instruction: str) -> str:
             try:
                 model = genai.GenerativeModel(
                     model_name=candidate,
-                    system_instruction=system_instruction
+                    system_instruction=system_instruction,
+                    client_options=client_opts
                 )
                 response = model.generate_content(prompt)
             except TypeError:
-                model = genai.GenerativeModel(model_name=candidate)
-                response = model.generate_content(f"{system_instruction}\n\n{prompt}")
+                try:
+                    model = genai.GenerativeModel(
+                        model_name=candidate,
+                        system_instruction=system_instruction
+                    )
+                    response = model.generate_content(prompt)
+                except TypeError:
+                    model = genai.GenerativeModel(model_name=candidate)
+                    response = model.generate_content(f"{system_instruction}\n\n{prompt}")
                 
-            _cached_model_name = candidate
+            _cached_model_names[cache_key] = candidate
             return response.text.strip()
         except Exception as e:
             last_error = e
             err_str = str(e)
             if "404" in err_str or "not found" in err_str.lower() or "not supported" in err_str.lower():
                 logger.warning(f"Model {candidate} gagal (404/Not Supported). Mencoba model fallback berikutnya...")
-                _cached_model_name = None
+                if cache_key in _cached_model_names:
+                    del _cached_model_names[cache_key]
                 continue
             else:
                 logger.error(f"Error saat generate content dengan {candidate}: {e}")
@@ -103,6 +124,9 @@ def generate_morning_summary(date_wib_str: str, emails_content: str) -> str:
     Dilengkapi pengecekan riwayat MongoDB agar tidak mengulang pola/kalimat yang sama.
     """
     db = get_db()
+    api_key = GEMINI_API_KEY_AKUN_EDWARD_FARREL or GEMINI_API_KEY
+    if GEMINI_API_KEY_AKUN_EDWARD_FARREL:
+        logger.info("Menggunakan API Key terpisah (GEMINI_API_KEY_AKUN_EDWARD_FARREL) untuk membaca pesan email.")
     recent_context = db.get_recent_briefings_context("morning", limit=1)
     context_instruction = f"\nCatatan Briefing Pagi Sebelumnya (hindari pengulangan frasa/pengantar yang persis sama):\n{recent_context}\n" if recent_context else ""
 
@@ -145,10 +169,10 @@ Have a productive day, Kevin! ❤️
 """
 
     try:
-        res = generate_content_safe(prompt, system_instruction)
+        res = generate_content_safe(prompt, system_instruction, api_key=api_key)
         if db.check_if_similar_exists(res, briefing_type="morning", similarity_threshold=0.75):
             logger.warning("Kemiripan tinggi dengan briefing pagi sebelumnya, mencoba regenerasi variasi...")
-            res = generate_content_safe(prompt + "\n\nCatatan Tambahan: Gunakan variasi kosakata baru dan pastikan tidak mengulang frasa kemaren.", system_instruction)
+            res = generate_content_safe(prompt + "\n\nCatatan Tambahan: Gunakan variasi kosakata baru dan pastikan tidak mengulang frasa kemaren.", system_instruction, api_key=api_key)
         db.save_briefing(res, briefing_type="morning")
         return res
     except Exception as e:
@@ -161,6 +185,9 @@ def generate_macro_summary(date_wib_str: str, news_data: dict, econ_events: str 
     Melakukan verifikasi MongoDB agar tidak mengulangi berita atau analisis yang sama persis.
     """
     db = get_db()
+    api_key = GEMINI_API_KEY_KEVIN_PETRA or GEMINI_API_KEY
+    if GEMINI_API_KEY_KEVIN_PETRA:
+        logger.info("Menggunakan API Key terpisah (GEMINI_API_KEY_KEVIN_PETRA) untuk analisa pasar & makro.")
     recent_context = db.get_recent_briefings_context("macro", limit=1)
     context_instruction = f"\nRiwayat Briefing Makro Sebelumnya (AGAR TIDAK MENGULANG POIN BERITA YANG PERSIS SAMA):\n{recent_context}\n" if recent_context else ""
 
@@ -215,10 +242,10 @@ Tanggal: {date_wib_str}
 [Kesimpulan & saran pantauan santai dari Beatrice untuk Kevin]
 """
     try:
-        res = generate_content_safe(prompt, system_instruction)
+        res = generate_content_safe(prompt, system_instruction, api_key=api_key)
         if db.check_if_similar_exists(res, briefing_type="macro", similarity_threshold=0.75):
             logger.warning("Kemiripan tinggi dengan briefing makro sebelumnya, mencoba regenerasi variasi...")
-            res = generate_content_safe(prompt + "\n\nCatatan Tambahan: Berikan analisis sudut pandang yang lebih segar dan jangan mengulangi kalimat di riwayat sebelumnya.", system_instruction)
+            res = generate_content_safe(prompt + "\n\nCatatan Tambahan: Berikan analisis sudut pandang yang lebih segar dan jangan mengulangi kalimat di riwayat sebelumnya.", system_instruction, api_key=api_key)
         db.save_briefing(res, briefing_type="macro")
         return res
     except Exception as e:
@@ -234,15 +261,22 @@ def get_chat_response(user_message: str) -> str:
     Memproses pesan masuk dari user dan membalas menggunakan Gemini Chat Session.
     Menggunakan riwayat memori MongoDB agar percakapan terus bersambung dan tidak monoton/mengulang.
     """
-    global chat_session, _cached_model_name
+    global chat_session, _cached_model_names
     db = get_db()
+    api_key = GEMINI_API_KEY_KEVIN_PETRA or GEMINI_API_KEY
+    if GEMINI_API_KEY_KEVIN_PETRA:
+        logger.info("Menggunakan API Key terpisah (GEMINI_API_KEY_KEVIN_PETRA) untuk Chatbot DM.")
+    
+    if api_key:
+        genai.configure(api_key=api_key)
+    client_opts = {'api_key': api_key} if api_key else None
     
     if chat_session is None:
         system_instruction = (
             "You are Beatrice, Kevin's smart and empathetic personal AI assistant. "
             "You speak friendly Indonesian, remember previous chat history, avoid repetitive responses, and assist Kevin with daily tasks."
         )
-        model_name = get_best_gemini_model_name()
+        model_name = get_best_gemini_model_name(api_key=api_key)
         candidate_models = [
             model_name,
             "gemini-2.5-flash"
@@ -255,22 +289,29 @@ def get_chat_response(user_message: str) -> str:
                 continue
             seen.add(candidate)
             try:
-                model = genai.GenerativeModel(
-                    model_name=candidate,
-                    system_instruction=system_instruction
-                )
+                try:
+                    model = genai.GenerativeModel(
+                        model_name=candidate,
+                        system_instruction=system_instruction,
+                        client_options=client_opts
+                    )
+                except TypeError:
+                    model = genai.GenerativeModel(
+                        model_name=candidate,
+                        system_instruction=system_instruction
+                    )
                 chat_session = model.start_chat(history=loaded_history)
-                _cached_model_name = candidate
                 break
             except Exception as e:
                 logger.warning(f"Gagal mulai chat session dengan model {candidate}: {e}")
-                _cached_model_name = None
                 chat_session = None
         
         if chat_session is None:
             return "Maaf Kevin, Beatrice sedang mengalami masalah saat menyiapkan chatbot. 😔"
         
     try:
+        if api_key:
+            genai.configure(api_key=api_key)
         db.save_chat_message("user", user_message)
         response = chat_session.send_message(user_message)
         reply = response.text.strip()
