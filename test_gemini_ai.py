@@ -24,7 +24,7 @@ def jalankan_chatbot():
     
     # 5. Mulai sesi chat biar bot inget konteks obrolan sebelumnya
     sesi_chat = client.chats.create(
-        model="gemini-2.5-flash",
+        model="gemini-3.5-flash",
         config=konfigurasi
     )
     
